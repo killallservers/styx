@@ -1,0 +1,40 @@
+name = "docker"
+repository = "github:moby/moby"
+
+[[versions]]
+version = "27.0.0"
+released = "2024-06-11"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "docker"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "docker-27.0.0-linux-x86_64.tar.gz"
+darwin-arm64 = "docker-27.0.0-darwin-arm64.tar.gz"
+darwin-x86_64 = "docker-27.0.0-darwin-x86_64.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a"
+darwin-arm64 = "a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f"
+darwin-x86_64 = "b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3"
+
+[[versions]]
+version = "25.0.0"
+released = "2023-12-06"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "docker"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "docker-25.0.0-linux-x86_64.tar.gz"
+darwin-arm64 = "docker-25.0.0-darwin-arm64.tar.gz"
+darwin-x86_64 = "docker-25.0.0-darwin-x86_64.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4"
+darwin-arm64 = "b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3"
+darwin-x86_64 = "c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a"

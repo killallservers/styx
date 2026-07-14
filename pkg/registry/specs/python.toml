@@ -19,3 +19,22 @@ darwin-x86_64 = "python-3.12.0-macos-x86_64.tar.xz"
 linux-x86_64 = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9"
 darwin-arm64 = "f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d"
 darwin-x86_64 = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8"
+
+[[versions]]
+version = "3.11.0"
+released = "2022-10-24"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "python3"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "python-3.11.0-linux-x86_64.tar.xz"
+darwin-arm64 = "python-3.11.0-macos-arm64.tar.xz"
+darwin-x86_64 = "python-3.11.0-macos-x86_64.tar.xz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0"
+darwin-arm64 = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e"
+darwin-x86_64 = "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9"

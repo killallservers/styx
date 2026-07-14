@@ -1,0 +1,40 @@
+name = "jq"
+repository = "github:jqlang/jq"
+
+[[versions]]
+version = "1.7.1"
+released = "2023-12-30"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "jq"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "jq-linux-amd64"
+darwin-arm64 = "jq-macos-arm64"
+darwin-x86_64 = "jq-macos-x86_64"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1"
+darwin-arm64 = "92a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d"
+darwin-x86_64 = "a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e"
+
+[[versions]]
+version = "1.6.0"
+released = "2022-06-29"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "jq"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "jq-linux-amd64"
+darwin-arm64 = "jq-macos-arm64"
+darwin-x86_64 = "jq-macos-x86_64"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2"
+darwin-arm64 = "a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1"
+darwin-x86_64 = "b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f"

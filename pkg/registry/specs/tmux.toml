@@ -1,0 +1,40 @@
+name = "tmux"
+repository = "github:tmux/tmux"
+
+[[versions]]
+version = "3.4"
+released = "2024-03-18"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "tmux"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "tmux-3.4-x86_64-unknown-linux-musl.tar.gz"
+darwin-arm64 = "tmux-3.4-aarch64-apple-darwin.tar.gz"
+darwin-x86_64 = "tmux-3.4-x86_64-apple-darwin.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b"
+darwin-arm64 = "b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4"
+darwin-x86_64 = "c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a"
+
+[[versions]]
+version = "3.3"
+released = "2023-04-21"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "tmux"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "tmux-3.3-x86_64-unknown-linux-musl.tar.gz"
+darwin-arm64 = "tmux-3.3-aarch64-apple-darwin.tar.gz"
+darwin-x86_64 = "tmux-3.3-x86_64-apple-darwin.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6"
+darwin-arm64 = "c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5"
+darwin-x86_64 = "d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b"
