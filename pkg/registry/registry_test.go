@@ -10,7 +10,15 @@ func TestLoadEmbeddedRegistry(t *testing.T) {
 		t.Fatalf("LoadEmbeddedRegistry failed: %v", err)
 	}
 
-	expectedTools := []string{"ripgrep", "fd", "bat", "eza", "golang", "rust", "node", "python", "postgres", "redis", "just"}
+	expectedTools := []string{
+		"ripgrep", "fd", "bat", "eza", "just",
+		"golang", "rust", "node", "python",
+		"postgres", "redis", "docker",
+		"git", "curl", "jq", "tmux",
+		"kubectl", "terraform", "aws-cli", "gcloud",
+		"protoc", "grpcurl", "neovim", "buf",
+		"docker-compose", "helm",
+	}
 	for _, toolName := range expectedTools {
 		if _, ok := reg[toolName]; !ok {
 			t.Errorf("expected tool %q not found in registry", toolName)
