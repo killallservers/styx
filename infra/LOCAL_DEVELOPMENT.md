@@ -1,545 +1,261 @@
-# Local Development Setup
+# Local Development: Styx Registry
 
-Run the complete Allora stack locally with `compose.dev.yml`, which mirrors production as closely as possible.
+Test the registry server locally before deploying to production.
 
-**This is for local testing BEFORE deploying to the production server.**
-
-For production deployment, see: [`DEPLOY.md`](DEPLOY.md).
+---
 
 ## Quick Start
 
-### Option A: With GPU (Full Stack)
+### Option 1: Local Binary (Fastest)
 
-If you have NVIDIA GPU:
+Build and run the registry server locally:
 
 ```bash
-cd infra/compose
-docker compose -f compose.dev.yml --profile gpu up -d
+# Build registry server
+go build -o bin/styx-registry ./cmd/registry
+
+# Run server (serves specs from pkg/registry/specs/)
+./bin/styx-registry -port 7506 -specs pkg/registry/specs
+
+# Test it
+curl http://localhost:7506/health
+curl http://localhost:7506/registry.json | jq '.tools | length'
+
+# Expected: "26" (tools count)
 ```
 
-This runs ALL services:
-- ✅ Ministral-3-3B (LLM, GPU-accelerated)
-- ✅ Qwen3-VL-Embedding (Embeddings, GPU-accelerated)
-- ✅ PostgreSQL (API database)
-- ✅ PostgreSQL (Web database)
-- ✅ API service (Bun)
-- ✅ Web service (Bun)
-- ✅ Prometheus (Metrics)
-- ✅ Grafana (Dashboards)
+Server runs on `http://localhost:7506`.
 
-### Option B: Without GPU (Database + API/Web Only)
+---
 
-If you don't have NVIDIA GPU or want to skip LLM/embeddings:
+### Option 2: Docker Compose (Production-Like)
+
+Run the exact production setup locally:
 
 ```bash
 cd infra/compose
+
+# Build images
+docker compose -f compose.dev.yml build
+
+# Start services
 docker compose -f compose.dev.yml up -d
+
+# Watch logs
+docker compose -f compose.dev.yml logs -f
+
+# Test
+curl http://localhost:7506/health
+curl http://localhost:7506/registry.json | jq '.tools | length'
+
+# Stop
+docker compose -f compose.dev.yml down
 ```
 
 This runs:
-- ✅ PostgreSQL (API database)
-- ✅ PostgreSQL (Web database)
-- ✅ API service (Bun)
-- ✅ Web service (Bun)
-- ✅ Prometheus (Metrics)
-- ✅ Grafana (Dashboards)
-
-API will fail health checks (LLM/embeddings unavailable), but database operations work.
-
-### Option C: With Caddy (TLS Testing)
-
-If you want to test HTTPS locally with self-signed certificates:
-
-```bash
-cd infra/compose
-docker compose -f compose.dev.yml --profile gpu --profile caddy up -d
-```
-
-Adds Caddy reverse proxy (but uses `localhost` for domain, so TLS won't verify in browser).
+- Registry server (port 7506, internal)
+- Caddy reverse proxy (ports 80, 443 with self-signed cert)
 
 ---
 
-## Configuration
+## Testing Registry Endpoints
 
-### Environment Variables
-
-Default values are in `.env.dev`:
+### Health Check
 
 ```bash
-# Default is fine for local dev
-POSTGRES_PASSWORD=allora
-GRAFANA_ADMIN_USER=admin
-GRAFANA_ADMIN_PASSWORD=admin
+curl -s http://localhost:7506/health | jq
 ```
 
-To override:
-
-```bash
-# Option 1: Edit .env.dev
-nano .env.dev
-
-# Option 2: Pass via environment
-export POSTGRES_PASSWORD=my-secure-password
-docker compose -f compose.dev.yml up -d
-
-# Option 3: Docker command
-docker compose -f compose.dev.yml -e POSTGRES_PASSWORD=custom up -d
+Expected response:
+```json
+{
+  "status": "ok",
+  "tools": 26,
+  "lastBuild": "2026-07-14T17:14:07Z"
+}
 ```
 
----
-
-## Service Ports
-
-All services are bound to `127.0.0.1` (localhost-only), matching production security:
-
-| Service | Port | Local URL | Notes |
-|---------|------|-----------|-------|
-| **API** | 7500 | http://localhost:7500 | Bun API service |
-| **Web** | 7501 | http://localhost:7501 | Bun web app |
-| **PostgreSQL (API)** | 5432 | localhost:5432 | Use psql or tools |
-| **PostgreSQL (Web)** | 5433 | localhost:5433 | Use psql or tools |
-| **Ministral LLM** | 7502 | http://localhost:7502/v1/chat/completions | OpenAI-compatible |
-| **Qwen3 Embeddings** | 7503 | http://localhost:7503/v1/embedding | OpenAI-compatible |
-| **Prometheus** | 9090 | http://localhost:9090 | Metrics dashboard |
-| **Grafana** | 3000 | http://localhost:3000 | Visualization (admin/admin) |
-
----
-
-## Accessing Services
-
-### API Service
+### Full Registry
 
 ```bash
-# Health check
-curl http://localhost:7500/health
-
-# Test endpoint
-curl -X POST http://localhost:7500/api/items \
-  -H "Content-Type: application/json" \
-  -d '{"name":"test","description":"test product"}'
+curl -s http://localhost:7506/registry.json | jq '.tools | keys'
 ```
 
-### Web Service
+Expected: Array of 26 tool names (ripgrep, fd, bat, golang, node, etc.)
+
+### Specific Tool
 
 ```bash
-# Home page
-open http://localhost:7501
-
-# Or in browser
-firefox http://localhost:7501
+curl -s http://localhost:7506/registry.json | jq '.tools.golang'
 ```
 
-### Prometheus
-
-```bash
-# Metrics dashboard
-open http://localhost:9090
-```
-
-### Grafana
-
-```bash
-# Dashboards (admin/admin)
-open http://localhost:3000
-```
-
-### PostgreSQL
-
-Connect with any PostgreSQL client:
-
-```bash
-# API database
-psql -h localhost -U allora -d allora
-
-# Web database
-psql -h localhost -p 5433 -U allora -d allora_web
-
-# Inside Docker
-docker compose -f compose.dev.yml exec api-db psql -U allora -d allora
-docker compose -f compose.dev.yml exec web-db psql -U allora -d allora_web
-```
-
-### LLM/Embeddings
-
-```bash
-# Test Ministral LLM
-curl http://localhost:7502/v1/models
-
-curl -X POST http://localhost:7502/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-3.5-turbo",
-    "messages": [{"role": "user", "content": "Hello"}],
-    "temperature": 0.1
-  }'
-
-# Test Qwen3 Embeddings
-curl http://localhost:7503/v1/models
-
-curl -X POST http://localhost:7503/v1/embedding \
-  -H "Content-Type: application/json" \
-  -d '{"input":"test text"}'
+Expected:
+```json
+{
+  "name": "golang",
+  "versions": [
+    {
+      "version": "1.26.0",
+      "platforms": {...},
+      ...
+    }
+  ]
+}
 ```
 
 ---
 
-## Common Commands
+## Testing the Client
 
-### View Logs
+The styx CLI client should fetch from the HTTP registry:
+
+```bash
+# With registry running locally
+export STYX_REGISTRY_URL=http://localhost:7506
+
+styx search golang
+styx add golang@1.26.0
+styx lock
+```
+
+---
+
+## Caddy Testing
+
+If using Docker Compose with Caddy:
+
+```bash
+# HTTPS with self-signed cert (dev only)
+curl -k https://localhost/registry.json | jq '.tools | length'
+
+# Or via Caddy container
+docker exec styx-caddy curl http://localhost:7506/registry.json | jq '.tools | length'
+```
+
+---
+
+## Adding Tools to Local Registry
+
+To test adding new tools:
+
+1. Create a new spec file:
+   ```bash
+   cp pkg/registry/specs/ripgrep.toml pkg/registry/specs/my-tool.toml
+   ```
+
+2. Edit the file with your tool details
+
+3. Restart registry:
+   ```bash
+   # If using binary:
+   pkill styx-registry
+   ./bin/styx-registry -port 7506 -specs pkg/registry/specs
+
+   # If using Docker:
+   docker compose -f infra/compose/compose.dev.yml restart registry
+   ```
+
+4. Verify:
+   ```bash
+   curl http://localhost:7506/registry.json | jq '.tools | keys'
+   ```
+
+---
+
+## Testing TOML Spec Validation
+
+The registry validates all specs on load. To test a malformed spec:
+
+```bash
+# Edit a spec file to make it invalid
+nano pkg/registry/specs/test-tool.toml
+
+# Try to start registry
+./bin/styx-registry -port 7506 -specs pkg/registry/specs
+
+# Should fail with validation error
+```
+
+---
+
+## Ports
+
+| Service | Port | URL |
+|---------|------|-----|
+| Registry server | 7506 | http://localhost:7506 |
+| Caddy (HTTP) | 80 | http://localhost (dev) |
+| Caddy (HTTPS) | 443 | https://localhost (dev, self-signed) |
+
+---
+
+## Logs
+
+### Binary Mode
+
+```bash
+# Stdout (where you ran the binary)
+# Watch the terminal output
+```
+
+### Docker Mode
 
 ```bash
 # All services
-docker compose -f compose.dev.yml logs -f
+docker compose -f infra/compose/compose.dev.yml logs -f
 
-# Specific service
-docker compose -f compose.dev.yml logs -f api
-docker compose -f compose.dev.yml logs -f web
-docker compose -f compose.dev.yml logs -f llm
+# Registry only
+docker compose -f infra/compose/compose.dev.yml logs -f registry
 
-# Follow + tail (last 50 lines)
-docker compose -f compose.dev.yml logs --tail 50 -f
-```
-
-### Check Service Status
-
-```bash
-# List all services
-docker compose -f compose.dev.yml ps
-
-# Expected output (all Up, or Exited if not using --profile gpu)
-# NAME                    STATUS
-# allora-api-db-dev       Up
-# allora-web-db-dev       Up
-# allora-api-dev          Up
-# allora-web-dev          Up
-# allora-llm-dev          Up (if --profile gpu)
-# allora-embeddings-dev   Up (if --profile gpu)
-# allora-prometheus-dev   Up
-# allora-grafana-dev      Up
-```
-
-### Stop/Start Services
-
-```bash
-# Stop all
-docker compose -f compose.dev.yml down
-
-# Stop and remove volumes (WARNING: deletes data!)
-docker compose -f compose.dev.yml down -v
-
-# Restart single service
-docker compose -f compose.dev.yml restart api
-
-# Start specific services only
-docker compose -f compose.dev.yml up -d api-db api web-db prometheus
-```
-
-### View Resource Usage
-
-```bash
-docker stats
-
-# Or in compose
-docker compose -f compose.dev.yml stats
-```
-
-### Clean Up
-
-```bash
-# Remove stopped containers
-docker compose -f compose.dev.yml rm
-
-# Prune unused images/volumes
-docker image prune
-docker volume prune
-docker system prune
+# Caddy only
+docker compose -f infra/compose/compose.dev.yml logs -f caddy
 ```
 
 ---
 
-## Development Workflow
-
-### 1. Start Stack
+## Cleanup
 
 ```bash
-cd infra/compose
-docker compose -f compose.dev.yml --profile gpu up -d
-```
+# Binary mode (just Ctrl+C in terminal)
 
-### 2. Watch Logs
-
-```bash
-docker compose -f compose.dev.yml logs -f api web
-```
-
-### 3. Make Code Changes
-
-Edit code in `packages/api/` or `packages/web/`
-
-### 4. Rebuild Services
-
-```bash
-# Rebuild without stopping
-docker compose -f compose.dev.yml build api web
-
-# Or restart services (if using auto-reload)
-docker compose -f compose.dev.yml restart api web
-```
-
-### 5. Test Changes
-
-```bash
-# API
-curl http://localhost:7500/api/...
-
-# Web
-open http://localhost:7501
-```
-
-### 6. View Metrics
-
-```bash
-# Prometheus: http://localhost:9090
-# Grafana: http://localhost:3000 (admin/admin)
-# Check container stats: docker stats
+# Docker mode
+docker compose -f infra/compose/compose.dev.yml down
+docker compose -f infra/compose/compose.dev.yml down -v  # Remove volumes too
 ```
 
 ---
 
 ## Troubleshooting
 
-### GPU Not Available
+### "Port already in use"
 
 ```bash
-# Check NVIDIA Docker support
-docker run --rm --runtime=nvidia nvidia/cuda:12-runtime nvidia-smi
+# Find what's using port 7506
+lsof -i :7506
+kill -9 <PID>
 
-# If error, install NVIDIA Container Toolkit:
-# https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
-
-# Or run without GPU:
-docker compose -f compose.dev.yml up -d  # Omit --profile gpu
+# Or use different port
+./bin/styx-registry -port 7507
 ```
 
-### Database Connection Refused
+### TOML parsing error
 
+Check your spec file syntax:
 ```bash
-# Check if databases are running
-docker compose -f compose.dev.yml ps api-db web-db
-
-# Check database logs
-docker compose -f compose.dev.yml logs api-db
-
-# Try connecting
-docker compose -f compose.dev.yml exec api-db psql -U allora -d allora
+go run ./cmd/registry -specs pkg/registry/specs
+# Will print which spec file failed to parse
 ```
 
-### API Service Won't Start
+### Caddy certificate issues
 
+Dev uses self-signed certificates. Ignore warnings:
 ```bash
-# Check logs
-docker compose -f compose.dev.yml logs api
-
-# Common issues:
-# - LLM/embeddings not running (use --profile gpu or mock)
-# - Database not ready (wait 10s and restart: docker compose restart api)
-# - Port already in use: lsof -i :7500
-```
-
-### Out of Disk Space
-
-```bash
-# Check disk usage
-docker system df
-
-# Prune unused images/volumes
-docker system prune -a
-
-# Remove specific volume
-docker volume rm <volume-name>
-```
-
-### Port Already in Use
-
-```bash
-# Find process using port
-lsof -i :7500  # API
-lsof -i :3000  # Grafana
-lsof -i :5432  # PostgreSQL
-
-# Kill process (or change compose port binding)
-kill <PID>
-
-# Or edit compose.dev.yml to use different port:
-# ports: - "127.0.0.1:7500:7500" → "127.0.0.1:8500:7500"
+curl -k https://localhost/health
+# -k skips certificate verification (dev only!)
 ```
 
 ---
 
-## Differences: Local vs Production
+## Next Steps
 
-| Aspect | Local (compose.dev.yml) | Production (compose.prod.yml) |
-|--------|-------------------------|-------------------------------|
-| **Environment** | development | production |
-| **Ports** | All on 127.0.0.1 (localhost) | Same (all local except Caddy) |
-| **Resource Limits** | None (dev machine may vary) | Strict CPU/memory limits |
-| **Logging** | json-file, unlimited | json-file, 10MB max, 3 files |
-| **TLS/HTTPS** | Not configured (use localhost) | Automatic via Let's Encrypt |
-| **Reverse Proxy** | Optional Caddy (commented) | Required Caddy (always on) |
-| **Caddy Security Headers** | Not applied (localhost) | Full security headers (HSTS, CSP) |
-| **Health Checks** | Same as prod | Same as dev |
-| **Firewall** | Host firewall (if enabled) | Hetzner FW + ufw + Docker binding |
-| **Restart Policy** | unless-stopped | unless-stopped |
-| **Volumes** | Local (deleted on `down -v`) | Persistent (not deleted) |
-| **LLM/Embeddings** | Optional (--profile gpu) | Required |
-| **API/Web** | Built from local code | Pre-built from Docker images |
-
-**Key Point:** Local setup is as close to production as possible, so bugs found locally will likely work in production.
-
----
-
-## Performance Tuning
-
-### Docker Desktop Settings (Mac/Windows)
-
-If running on Docker Desktop:
-
-```
-Preferences → Resources:
-- CPUs: 4-6 (adjust to your machine)
-- Memory: 8-16 GB (LLM needs 6-8GB)
-- Disk Image Size: 100+ GB
-- Swap: 2GB
-```
-
-### Memory Issues
-
-If services crash with OOM (Out Of Memory):
-
-```yaml
-# Edit compose.dev.yml, add to each service:
-deploy:
-  resources:
-    limits:
-      memory: 2G  # Adjust per service
-    reservations:
-      memory: 1G
-```
-
-### CPU Issues
-
-If LLM is slow:
-
-```yaml
-# Edit compose.dev.yml llm service:
-deploy:
-  resources:
-    limits:
-      cpus: '4'
-    reservations:
-      cpus: '2'
-```
-
-### Disk Space
-
-LLM model files are ~5GB:
-
-```bash
-du -sh ~/.cache/huggingface/hub/
-```
-
----
-
-## Database Persistence
-
-### Keep Data Across Restarts
-
-By default, volumes persist data:
-
-```bash
-docker compose -f compose.dev.yml down  # Data still there
-docker compose -f compose.dev.yml up -d   # Data restored
-```
-
-### Reset Data
-
-```bash
-# Delete all volumes (WARNING: Deletes all data!)
-docker compose -f compose.dev.yml down -v
-
-# Start fresh
-docker compose -f compose.dev.yml up -d
-```
-
-### Backup Database
-
-```bash
-# Backup API database
-docker compose -f compose.dev.yml exec api-db pg_dump -U allora allora > backup-api.sql
-
-# Backup Web database
-docker compose -f compose.dev.yml exec web-db pg_dump -U allora allora_web > backup-web.sql
-
-# Restore
-docker compose -f compose.dev.yml exec api-db psql -U allora allora < backup-api.sql
-```
-
----
-
-## CI/CD Testing
-
-### Run Tests Locally
-
-```bash
-# Type check
-bun run typecheck
-
-# Lint
-bun run lint
-
-# Format
-bun run format
-
-# Check (all in one)
-bun run check
-
-# Tests (if you have them)
-bun run test
-```
-
-### Simulate GitHub Actions Build
-
-```bash
-# Build API image (as GitHub Actions does)
-docker build -f infra/compose/Dockerfile.api -t test-api:latest .
-
-# Build Web image
-docker build -f infra/compose/Dockerfile.web -t test-web:latest .
-
-# Tag for GHCR (if testing push)
-docker tag test-api:latest ghcr.io/your-username/allora-api:latest
-docker tag test-web:latest ghcr.io/your-username/allora-web:latest
-```
-
----
-
-## Next Steps After Setup
-
-1. ✅ Start stack: `docker compose -f compose.dev.yml --profile gpu up -d`
-2. ✅ Verify all services: `docker compose -f compose.dev.yml ps`
-3. ✅ Test API: `curl http://localhost:7500/health`
-4. ✅ Access Web: `open http://localhost:7501`
-5. ✅ View metrics: `open http://localhost:9090`
-6. ✅ Make code changes in `packages/api/` or `packages/web/`
-7. ✅ Rebuild: `docker compose -f compose.dev.yml build`
-8. ✅ Test: `curl` or browser
-
----
-
-## Reference
-
-- **Compose file:** `infra/compose/compose.dev.yml`
-- **Environment:** `infra/compose/.env.dev`
-- **Production file:** `infra/compose/compose.prod.yml`
-- **Docker Compose docs:** https://docs.docker.com/compose/
-- **Troubleshooting:** See section above
+- [Production deployment](DEPLOY.md)
+- [GitHub Actions setup](GITHUB_SECRETS_SETUP.md)

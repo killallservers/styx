@@ -13,27 +13,50 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Deploy to Hetzner
         env:
-          SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
-          SERVER_IP: ${{ secrets.PRODUCTION_SERVER_IP }}
+          SSH_KEY: ${{ secrets.STYX_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.STYX_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.STYX_DEPLOY_USER }}
+          REGISTRY_DOMAIN: ${{ secrets.STYX_REGISTRY_DOMAIN }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts 2>/dev/null || true
-          
+          ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+
           # Deploy
-          ssh -i ~/.ssh/deploy_key deploy@$SERVER_IP << 'DEPLOY'
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" << 'DEPLOY'
+            set -eu
             cd /opt/styx
+
+            echo "Pulling latest code..."
             git pull origin main
-            docker compose -f infra/compose/compose.prod.yml down
-            docker compose -f infra/compose/compose.prod.yml build --no-cache
-            docker compose -f infra/compose/compose.prod.yml up -d
-            docker compose -f infra/compose/compose.prod.yml logs registry
+
+            echo "Building registry image..."
+            docker compose -f compose.prod.yml build --no-cache registry
+
+            echo "Starting services..."
+            docker compose -f compose.prod.yml up -d
+
+            echo "Verifying health check..."
+            sleep 2
+            curl -f http://localhost:7506/health || exit 1
+
+            echo "✅ Deployment successful"
           DEPLOY
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Registry deployed successfully to https://${{ secrets.STYX_REGISTRY_DOMAIN }}/health"
+          else
+            echo "❌ Deployment failed - check logs above"
+            exit 1
+          fi

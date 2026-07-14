@@ -1,530 +1,360 @@
-# Allora Deployment Guide
+# Deploying Styx Registry to Hetzner cx23
 
-**Complete guide for first deployment + ongoing operations.**
-
-## Quick Start (TL;DR)
-
-```bash
-# 1. Generate SSH keys (locally first)
-ssh-keygen -t ed25519 -f ~/.ssh/hetzner/<SERVER-ID>/root -C "erik.wright@killallservers.com"
-ssh-keygen -t ed25519 -f ~/.ssh/hetzner/<SERVER-ID>/deploy -C "erik.wright@killallservers.com"
-
-# 2. Add root key using password (from Hetzner email — one-time only)
-ssh-copy-id -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP>
-
-# Enter password when prompted, adds default SSH key
-
-# 3. Add GitHub secrets (one-time setup)
-# Follow: infra/GITHUB_SECRETS_SETUP.md (complete step-by-step guide)
-# Secrets needed: PRODUCTION_SERVER_IP, PRODUCTION_SSH_KEY, PRODUCTION_DOMAIN, DEPLOY_SSH_PUBLIC_KEY
-
-# 4. Run GitHub Actions workflow to initialize server
-# Go to: GitHub → Actions → "Initialize Server"
-# Click "Run workflow" (no inputs needed) → wait 30-45 minutes
-
-# 5-7. Follow steps below (configure, verify, deploy)
-# Total: 30-45 minutes bootstrap + 5-10 minutes manual setup
-```
+Step-by-step guide for provisioning and deploying the Styx registry server.
 
 ---
 
 ## Prerequisites
 
-- Hetzner Debian 13 server provisioned (IP, SSH access)
-- Local machine with `ssh`, `scp`, Git
-- Two SSH keys (recommend ed25519):
-  - `~/.ssh/hetzner/<SERVER-ID>/root` — Emergency root access
-  - `~/.ssh/hetzner/<SERVER-ID>/deploy` — Normal operations
-- GitHub repository (optional for CI/CD automatic deployments)
+- Hetzner account (sign up at https://hetzner.cloud)
+- SSH keypair for deployment
+- GitHub account with push access to styx repo
+- Domain name (or use subdomain like registry.yourdomain.com)
 
 ---
 
-## Part 1: First-Time Deployment (30-45 min)
+## Step 1: Provision Hetzner cx23
 
-### ⚠️ CRITICAL PREREQUISITE: Add Root SSH Key to Server
+### Create the Server in Hetzner Console
 
-**THIS MUST BE DONE BEFORE RUNNING THE GITHUB ACTIONS WORKFLOW**
+1. Go to https://console.hetzner.cloud
+2. Create new project (or use existing)
+3. Click **Add Server**
+4. **Location:** Choose your region (Falkenstein recommended for EU)
+5. **OS Image:** Debian 13 (latest)
+6. **Server Type:** CX23 (2 vCPU, 4 GB RAM, 40 GB SSD) — ~€3/month
+7. **SSH Keys:** Add your public key from `~/.ssh/id_rsa.pub`
+8. **Name:** styx-registry
+9. Click **Create Server**
+10. **Copy the IP address** (you'll need it next)
 
-The GitHub Actions workflow will verify your root SSH key is authorized. If it's not, the workflow will fail immediately.
+### Run Provisioning Script
 
-**One-time setup (local machine):**
-
-```bash
-# 1. Generate two separate SSH keys
-ssh-keygen -t ed25519 -f ~/.ssh/hetzner/<SERVER-ID>/root -C "admin@allora.style"
-ssh-keygen -t ed25519 -f ~/.ssh/hetzner/<SERVER-ID>/deploy -C "admin@allora.style"
-
-# 2. Add root key to server using Hetzner password (one-time only)
-ssh-copy-id -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP>
-# When prompted, enter the password from your Hetzner email
-
-# 3. Verify the key works
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> "echo OK"
-# Expected output: OK
-```
-
-**Why both keys?**
-- **Root key** (`root`) — Used by GitHub Actions for initial bootstrap setup
-- **Deploy key** (`deploy`) — Used by developers/deploy scripts for normal operations
-
-**After ssh-copy-id succeeds:**
-- Password authentication is permanently disabled by the bootstrap script
-- Only SSH key authentication will work
-
-### Step 0: Prepare for GitHub Actions Workflow
-
-Ensure you have:
-- ✅ SSH keys generated locally (root + deploy)
-- ✅ Root key added to server via `ssh-copy-id` (password auth used once)
-- ✅ Root key verified working: `ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> "echo OK"`
-- ✅ GitHub secrets configured (see Step 1 Prerequisites)
-
-### Step 1: Initialize Server with GitHub Actions (30-45 min)
-
-Instead of manually running bootstrap, use the GitHub Actions workflow:
-
-**Prerequisites:**
-1. **Add GitHub secrets** — Follow `infra/GITHUB_SECRETS_SETUP.md` for complete step-by-step instructions
-   - `PRODUCTION_SERVER_IP` — Your server IP
-   - `PRODUCTION_SSH_KEY` — Your root private key
-   - `DEPLOY_SSH_PUBLIC_KEY` — Your deploy public key
-   - `PRODUCTION_DOMAIN` — Your domain (e.g., `allora.example.com`)
-   - `SLACK_WEBHOOK` — (Optional) Slack notification webhook
-
-**Run the workflow:**
-
-1. Go to GitHub → Actions → "Initialize Server"
-2. Click "Run workflow" button (green)
-3. Click "Run workflow" (no inputs needed — uses secrets from GitHub)
-4. Monitor at GitHub → Actions (takes 30-45 minutes)
-
-The workflow automatically:
-- ✅ Transfers `bootstrap-secure.sh` to server
-- ✅ Runs bootstrap with proper environment variables
-- ✅ Installs Docker + Docker Compose
-- ✅ Installs NVIDIA Container Toolkit (GPU support)
-- ✅ Configures UFW firewall + Fail2ban
-- ✅ Hardens SSH (key-only auth, password disabled)
-- ✅ Sets up automatic security updates
-- ✅ Creates deploy user with Docker + sudo access
-- ✅ Adds SSH keys to both root and deploy users
-- ✅ Sends Slack notification when complete
-
-**Status updates:**
-Watch the workflow log for progress. At the end, you'll see:
-```
-✅ ✅ ✅ SERVER INITIALIZATION COMPLETE ✅ ✅ ✅
-```
-
-The workflow output includes all next steps and verification commands.
-
-### Step 2: Verify Bootstrap Completion (5 min)
-
-After the GitHub Actions workflow completes, verify the server state:
-
-Check Docker + GPU:
+On your local machine:
 
 ```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> "docker --version && nvidia-smi"
+cd styx
+bash infra/deployment/provision-cx23.sh \
+    <server_ip> \
+    registry.styx.sh \
+    killallservers/styx \
+    ~/.ssh/id_rsa.pub
 ```
 
-Check deploy user:
+**What this does:**
+- Creates `styx` user (non-root deployment)
+- Installs Docker and Docker Compose
+- Sets up UFW firewall (SSH, HTTP, HTTPS)
+- Creates `/opt/styx` deployment directory
+- Adds SSH key for automated CI/CD deployments
+- Configures auto-security updates
+
+---
+
+## Step 2: Configure DNS
+
+Point your domain to the Hetzner server:
+
+1. Go to your DNS provider (Cloudflare, Route53, etc.)
+2. Create an **A record:**
+   - Name: `registry` (or `registry.yourdomain.com`)
+   - Type: A
+   - Value: `<your-server-ip>`
+   - TTL: 3600
+
+Example for Cloudflare:
+```
+Type: A
+Name: registry
+IPv4: 1.2.3.4
+TTL: Auto
+```
+
+Wait for DNS propagation (usually < 5 minutes, max 48 hours).
+
+---
+
+## Step 3: Initialize Repository on Server
+
+SSH into the server:
 
 ```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> "whoami && sudo docker ps"
+ssh styx@<server_ip>
+cd /opt/styx
 ```
 
-Check SSH hardening (PASSWORD AUTH MUST BE DISABLED):
+Initialize git repository:
 
 ```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> \
-  "grep '^PasswordAuthentication' /etc/ssh/sshd_config"
+git init
+git remote add origin https://github.com/killallservers/styx
+git fetch origin main
+git checkout -b main origin/main
 ```
 
-**Expected output:** `PasswordAuthentication no`
+---
 
-Check firewall rules:
+## Step 4: Deploy Registry
+
+Run the deploy script:
 
 ```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> "ufw status && echo '---' && fail2ban-client status sshd"
+/home/styx/deploy.sh
 ```
 
-**Expected:** UFW active, SSH allowed, Fail2ban protecting sshd
+This will:
+1. Pull latest code
+2. Build registry Docker image
+3. Start registry + Caddy containers
+4. Verify health check
 
-**If bootstrap failed:** Re-run the GitHub Actions workflow with the same server IP
-
-⚠️  **If hardening didn't apply (still see password prompts):**
+Watch the logs:
 
 ```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> bash -c '
-DEPLOY_SSH_PUBLIC_KEY="'"$(cat ~/.ssh/hetzner/<SERVER-ID>/deploy.pub)"'"
-bash /tmp/bootstrap-secure.sh
-'
+docker compose -f /opt/styx/compose.prod.yml logs -f
 ```
 
-### Step 3: Copy Docker Compose Files (1 min)
+---
+
+## Step 5: Verify Deployment
+
+From your local machine:
 
 ```bash
-scp -i ~/.ssh/hetzner/<SERVER-ID>/deploy -r infra/compose/* deploy@<SERVER_IP>:/opt/allora/compose/
-scp -i ~/.ssh/hetzner/<SERVER-ID>/deploy infra/deployment/*.sh deploy@<SERVER_IP>:/opt/allora/deployment/
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> "sudo chown -R deploy:docker /opt/allora"
+# Check health
+curl https://registry.styx.sh/health
+
+# Expected response:
+# {"status":"ok","tools":26,"lastBuild":"2026-07-14T17:14:07Z"}
+
+# Check registry.json
+curl https://registry.styx.sh/registry.json | jq '.tools | length'
+
+# Should output: 26
 ```
 
-### Step 4: Configure Environment (2 min)
+---
 
-SSH to server:
+## Step 6: Configure GitHub Actions Deployments
+
+See [GITHUB_SECRETS_SETUP.md](GITHUB_SECRETS_SETUP.md) for setting up automated deployments.
+
+After secrets are configured, push to main to trigger auto-deployment:
 
 ```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP>
+git push origin main
 ```
 
-Edit environment:
+---
+
+## Step 7: Test Automated Deployment
+
+Make a small change to trigger CI/CD:
 
 ```bash
-nano /opt/allora/compose/.env
-```
-
-Set these values:
-
-```env
-ENVIRONMENT=production
-DOMAIN=your-domain.com
-DOCKER_REGISTRY=ghcr.io/killallservers
-IMAGE_TAG=latest
-
-POSTGRES_PASSWORD=<32-char-random>     # Generate: openssl rand -base64 32
-GRAFANA_ADMIN_PASSWORD=<16-char-random> # Generate: openssl rand -base64 16
-```
-
-**Important:**
-- `DOMAIN`: **Domain name only** (e.g., `allora.example.com`), no `https://` or `http://` prefix
-- `DOCKER_REGISTRY`: Automatically set by bootstrap. Only edit if using a different registry
-
-Save and exit: `Ctrl+O`, `Enter`, `Ctrl+X`
-
-### Step 5: Download Models (5-10 min)
-
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> bash /opt/allora/deployment/download-models.sh
-```
-
-Downloads directly to `~/.cache/huggingface/hub/`:
-- Ministral-3-3B-Instruct (2.5GB)
-- Qwen3-VL-Embedding-2B (1.8GB)
-
-Takes 5-10 minutes depending on network speed.
-
-### Step 6: Start Services (5 min)
-
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "cd /opt/allora/compose && docker compose -f compose.prod.yml up -d"
-```
-
-Wait for services to start (2-3 min), then check:
-
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "cd /opt/allora/compose && docker compose -f compose.prod.yml ps"
-```
-
-Expected: All 9 services show `Up (healthy)`:
-- api-db, web-db (PostgreSQL)
-- llm, embeddings (LLM services)
-- api, web (Application services)
-- caddy (Reverse proxy)
-- prometheus, grafana (Monitoring)
-
-### Step 7: Verify Services (5 min)
-
-Health checks:
-
-```bash
-# API health
-curl https://<SERVER_IP>/api/health
-
-# Web (in browser)
-https://<SERVER_IP>/
-
-# Grafana (via SSH tunnel)
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy -L 3000:localhost:3000 deploy@<SERVER_IP>
-# Then: http://localhost:3000 (user: admin, password from .env)
-```
-
-### Step 7: Enable Automatic Deployments (1 min)
-
-The GitHub Actions secrets were already added in Step 1. Now automatic deployments are active.
-
-**Test deployment:**
-
-```bash
-git add .
+echo "# Test deployment" >> README.md
+git add README.md
 git commit -m "test: trigger deployment"
 git push origin main
 ```
 
-GitHub Actions will:
-1. Build new Docker images
-2. Push to GHCR
-3. Automatically deploy to production via SSH
-4. Send Slack notification
+Monitor GitHub Actions:
+1. Go to https://github.com/killallservers/styx/actions
+2. Watch the `deploy-registry` workflow
+3. Should see: build → push → SSH deploy → restart
 
-Monitor at: GitHub → Actions → "Deploy to Production"
-
-**Manual deployment (if needed):**
-
-Go to GitHub → Actions → "Deploy to Production" → "Run workflow" → enter image tag
-
----
-
-## Bootstrap Script Details
-
-For complete details on bootstrap script features, environment variables, and troubleshooting, see:
-- **`infra/deployment/bootstrap-secure.sh`** — Full source code with extensive comments
-- **`GITHUB_SECRETS_SETUP.md`** — Secrets configuration guide (includes environment variable details)
-
----
-
-## Part 2: Ongoing Operations
-
-### View Logs
-
-All services:
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker compose -f /opt/allora/compose/compose.prod.yml logs -f"
-```
-
-Specific service:
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker compose -f /opt/allora/compose/compose.prod.yml logs -f api"
-```
-
-### Restart a Service
+Verify the change is live:
 
 ```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker compose -f /opt/allora/compose/compose.prod.yml restart api"
+curl https://registry.styx.sh/registry.json | jq '.metadata'
 ```
-
-### Stop All Services
-
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker compose -f /opt/allora/compose/compose.prod.yml down"
-```
-
-### Start Services Again
-
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker compose -f /opt/allora/compose/compose.prod.yml up -d"
-```
-
-### Database Backup
-
-Manual backup:
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker exec allora-api-db pg_dump -U allora allora > ~/backup-$(date +%Y%m%d).sql"
-```
-
-Automated backups already configured (see `infra/compose/services/postgres/backup.sh`).
-
-### Update Services
-
-Pull latest images:
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker compose -f /opt/allora/compose/compose.prod.yml pull"
-```
-
-Restart with new images:
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker compose -f /opt/allora/compose/compose.prod.yml up -d"
-```
-
-Or, push code and GitHub Actions handles it automatically.
-
-### Configure Environment Variables
-
-Edit on server:
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP>
-nano /opt/allora/compose/.env
-```
-
-Restart affected services:
-```bash
-docker compose -f /opt/allora/compose/compose.prod.yml up -d
-```
-
----
-
-## User Access
-
-| User | SSH Key | Access | Use Case |
-|------|---------|--------|----------|
-| `root` | `~/.ssh/allora-root` | All files, containers, system | Emergencies only |
-| `deploy` | `~/.ssh/allora-deploy` | Docker, sudo, compose files | Normal operations |
-
-### SSH Config (Optional)
-
-Add to `~/.ssh/config`:
-
-```
-Host allora
-  HostName <SERVER_IP>
-  User deploy
-  IdentityFile ~/.ssh/allora-deploy
-
-Host allora-root
-  HostName <SERVER_IP>
-  User root
-  IdentityFile ~/.ssh/allora-root
-```
-
-Then: `ssh allora` (deploy), `ssh allora-root` (emergency)
 
 ---
 
 ## Troubleshooting
 
-### Services won't start
+### Domain not resolving
 
 ```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker compose -f /opt/allora/compose/compose.prod.yml logs"
+# Check DNS propagation
+nslookup registry.styx.sh
+dig registry.styx.sh
+
+# Wait a few minutes if it's new
 ```
 
-Common causes:
-- Waiting for database (wait 30s, retry)
-- Missing models (re-run download-models.sh)
-- Port conflict (change in compose.prod.yml)
-
-### GPU not available
+### Registry container failing
 
 ```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker run --rm --runtime=nvidia nvidia/cuda:12-runtime nvidia-smi"
+ssh styx@<server_ip>
+docker compose -f /opt/styx/compose.prod.yml logs registry
 ```
 
-If fails, re-run bootstrap (root key):
+Common issues:
+- **Port 7506 in use:** Check `docker ps` and kill conflicting containers
+- **TOML spec parsing error:** Check `/opt/styx/pkg/registry/specs/*.toml` are valid
+- **Out of memory:** cx23 has 4GB; should be plenty for registry
+
+### Caddy TLS not working
 
 ```bash
-ssh -i ~/.ssh/allora-root root@<SERVER_IP> bash /tmp/bootstrap-secure.sh
+docker compose -f /opt/styx/compose.prod.yml logs caddy
+
+# Caddy gets TLS from Let's Encrypt. If stuck:
+# 1. Check domain is actually pointing to server
+# 2. Check ports 80/443 are open in firewall
+# 3. Restart Caddy: docker compose restart caddy
 ```
 
-### Password Authentication Still Enabled
-
-**Problem:** You can still SSH with password even though bootstrap ran
-
-**Root Cause:** Conflicting SSH config entries, or bootstrap script didn't complete properly
-
-**Fix:**
+### Health check failing
 
 ```bash
-# 1. Check current SSH config
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> \
-  "grep -n 'PasswordAuthentication' /etc/ssh/sshd_config"
+# From server:
+curl -v http://localhost:7506/health
 
-# If multiple lines exist, only the LAST one takes effect
-# Output should show only: PasswordAuthentication no
-
-# 2. Remove all PasswordAuthentication lines and re-run bootstrap
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> \
-  "sed -i '/^#*PasswordAuthentication/d' /etc/ssh/sshd_config && \
-   echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config && \
-   sshd -t && systemctl restart sshd && echo 'SSH hardened successfully'"
-
-# 3. Re-run bootstrap to ensure all settings are applied
-DEPLOY_SSH_PUBLIC_KEY="$(cat ~/.ssh/hetzner/<SERVER-ID>/deploy.pub)" \
-  ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> bash /tmp/bootstrap-secure.sh
-
-# 4. Verify: this should print "PasswordAuthentication no"
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> \
-  "grep '^PasswordAuthentication' /etc/ssh/sshd_config"
-
-# 5. Test: this MUST fail with "Permission denied (publickey)" not password prompt
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/root root@<SERVER_IP> -o PreferredAuthentications=password -o PubkeyAuthentication=no "echo test" 2>&1
+# From local:
+curl -v https://registry.styx.sh/health
 ```
 
-**Expected:** Permission denied or similar, NOT a password prompt
-
-### Can't SSH
-
-Verify key exists and permissions:
-
-```bash
-ls -la ~/.ssh/hetzner/<SERVER-ID>/{root,deploy}
-chmod 600 ~/.ssh/hetzner/<SERVER-ID>/{root,deploy}
-chmod 644 ~/.ssh/hetzner/<SERVER-ID>/{root,deploy}.pub
-```
-
-Verify server IP:
-
-```bash
-ping <SERVER_IP>
-```
-
-Test key authentication explicitly:
-
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/root -o PubkeyAuthentication=yes -o PasswordAuthentication=no root@<SERVER_IP> "echo OK"
-```
-
-If that fails but password works, the issue is SSH hardening. See "Password Authentication Still Enabled" above.
-
-### Caddy SSL issues
-
-Check certificate status:
-
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker compose -f /opt/allora/compose/compose.prod.yml exec caddy caddy list-certs"
-```
-
-Check logs:
-
-```bash
-ssh -i ~/.ssh/hetzner/<SERVER-ID>/deploy deploy@<SERVER_IP> \
-  "docker compose -f /opt/allora/compose/compose.prod.yml logs caddy"
-```
-
-Verify DNS points to server:
-
-```bash
-nslookup <DOMAIN>
-# Should return <SERVER_IP>
+Expected response:
+```json
+{
+  "status": "ok",
+  "tools": 26,
+  "lastBuild": "2026-07-14T17:14:07Z"
+}
 ```
 
 ---
 
-## Security Notes
+## Maintenance
 
-✅ **Implemented:**
-- SSH key-only auth (no passwords)
-- Two separate SSH keys (root + deploy)
-- UFW firewall + Fail2ban
-- Automatic security updates
-- Non-root service users (Docker appuser:1000)
-- Caddy automatic HTTPS
+### Manual Updates
 
-⚠️ **Recommended:**
-- Rotate SSH keys periodically
-- Store private keys securely (not in repo, not on web servers)
-- Monitor logs for suspicious activity
-- Keep Debian packages updated
-- Use strong database passwords (32+ chars)
+If GitHub Actions fails, manually deploy:
+
+```bash
+ssh styx@<server_ip>
+cd /opt/styx
+git pull origin main
+/home/styx/deploy.sh
+```
+
+### View Logs
+
+```bash
+docker compose -f /opt/styx/compose.prod.yml logs -f registry
+docker compose -f /opt/styx/compose.prod.yml logs -f caddy
+```
+
+### Stop Services
+
+```bash
+docker compose -f /opt/styx/compose.prod.yml down
+```
+
+### Restart Services
+
+```bash
+docker compose -f /opt/styx/compose.prod.yml up -d
+```
+
+### Rebuild Registry Image
+
+```bash
+docker compose -f /opt/styx/compose.prod.yml build --no-cache registry
+docker compose -f /opt/styx/compose.prod.yml up -d registry
+```
 
 ---
 
-## Reference
+## Monitoring
 
-- **Compose files:** `infra/compose/compose.prod.yml` (production), `compose.dev.yml` (development)
-- **Bootstrap:** `infra/deployment/bootstrap-secure.sh` (idempotent, safe to re-run)
-- **Models:** `infra/deployment/download-models.sh` (downloads from Hugging Face)
-- **Local dev:** `infra/LOCAL_DEVELOPMENT.md`
-- **Security:** `infra/SECURITY.md`
+### Health Checks
+
+Add to your monitoring system (Uptime Kuma, Pingdom, etc.):
+```
+https://registry.styx.sh/health
+```
+
+### Logs
+
+Caddy auto-rotates logs. View recent entries:
+
+```bash
+docker compose -f /opt/styx/compose.prod.yml logs --tail 100 caddy
+docker compose -f /opt/styx/compose.prod.yml logs --tail 100 registry
+```
+
+### Disk Usage
+
+Monitor `/opt/styx` disk usage:
+
+```bash
+du -sh /opt/styx
+df -h /opt/styx
+```
+
+Registry should use < 100MB. If growing, check for:
+- Build artifact accumulation
+- Caddy certificate logs
+- Container logs (auto-rotated via compose.prod.yml config)
+
+---
+
+## Cost & Performance
+
+**Hetzner cx23 specs:**
+- 2 vCPU (AMD EPYC)
+- 4 GB RAM
+- 40 GB NVMe SSD
+- 1 Gbps network
+- **€3/month base**
+- **~€0.50/month bandwidth** (light usage)
+
+**Expected performance:**
+- Registry.json response: < 10ms (cached)
+- 26 tools, ~2MB JSON
+- ~100 requests/minute (healthy)
+- Easily handles 1000+ requests/minute
+
+**Upgrading:**
+If you need more resources:
+- CPX21 (2 vCPU, 8GB RAM): ~€6/month
+- CPX31 (4 vCPU, 16GB RAM): ~€20/month
+
+Upgrade in Hetzner console without downtime.
+
+---
+
+## Disaster Recovery
+
+### Backup Registry Specs
+
+The source of truth is GitHub. To restore:
+
+```bash
+# On server
+rm -rf /opt/styx
+git clone https://github.com/killallservers/styx /opt/styx
+cd /opt/styx
+/home/styx/deploy.sh
+```
+
+### Restore from Disaster
+
+If the server dies, provision a new one with the same IP/domain:
+
+```bash
+bash infra/deployment/provision-cx23.sh <new_ip> registry.styx.sh killallservers/styx ~/.ssh/id_rsa.pub
+```
+
+DNS still points to old IP. Update Hetzner console or DNS provider to new IP.
+
+---
+
+## Next Steps
+
+- [Set up GitHub Actions secrets](GITHUB_SECRETS_SETUP.md)
+- [Local development testing](LOCAL_DEVELOPMENT.md)
+- Monitor at: https://registry.styx.sh/health
