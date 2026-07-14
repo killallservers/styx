@@ -1,0 +1,21 @@
+name = "redis"
+repository = "github:redis/redis"
+
+[[versions]]
+version = "7.2.0"
+released = "2023-11-01"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "redis-server"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "redis-7.2.0-linux-x86_64.tar.gz"
+darwin-arm64 = "redis-7.2.0-macos-arm64.tar.gz"
+darwin-x86_64 = "redis-7.2.0-macos-x86_64.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2"
+darwin-arm64 = "a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3"
+darwin-x86_64 = "b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e"

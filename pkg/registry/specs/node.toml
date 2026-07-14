@@ -1,0 +1,21 @@
+name = "node"
+repository = "github:nodejs/node"
+
+[[versions]]
+version = "20.10.0"
+released = "2024-01-09"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "node"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "node-v20.10.0-linux-x64.tar.xz"
+darwin-arm64 = "node-v20.10.0-darwin-arm64.tar.xz"
+darwin-x86_64 = "node-v20.10.0-darwin-x64.tar.xz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8"
+darwin-arm64 = "e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7"
+darwin-x86_64 = "f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d"

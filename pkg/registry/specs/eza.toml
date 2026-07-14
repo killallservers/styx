@@ -1,0 +1,21 @@
+name = "eza"
+repository = "github:eza-community/eza"
+
+[[versions]]
+version = "0.18.0"
+released = "2024-08-20"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "eza"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "eza-linux-x86_64.tar.gz"
+darwin-arm64 = "eza-macos-arm64.tar.gz"
+darwin-x86_64 = "eza-macos-x86_64.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b"
+darwin-arm64 = "b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4"
+darwin-x86_64 = "c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a"

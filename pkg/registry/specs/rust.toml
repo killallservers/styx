@@ -1,0 +1,21 @@
+name = "rust"
+repository = "github:rust-lang/rust"
+
+[[versions]]
+version = "1.75.0"
+released = "2023-12-28"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "rustc"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "rust-1.75.0-x86_64-unknown-linux-musl.tar.gz"
+darwin-arm64 = "rust-1.75.0-aarch64-apple-darwin.tar.gz"
+darwin-x86_64 = "rust-1.75.0-x86_64-apple-darwin.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7"
+darwin-arm64 = "d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6"
+darwin-x86_64 = "e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c"

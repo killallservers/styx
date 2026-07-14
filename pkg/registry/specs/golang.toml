@@ -1,0 +1,21 @@
+name = "golang"
+repository = "github:golang/go"
+
+[[versions]]
+version = "1.22.0"
+released = "2024-02-06"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "go"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "go1.22.0.linux-amd64.tar.gz"
+darwin-arm64 = "go1.22.0.darwin-arm64.tar.gz"
+darwin-x86_64 = "go1.22.0.darwin-amd64.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c"
+darwin-arm64 = "c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5"
+darwin-x86_64 = "d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b"
