@@ -42,6 +42,7 @@ jobs:
             docker compose -f compose.prod.yml build --no-cache registry
 
             echo "Starting services..."
+            export DOMAIN=${{ secrets.STYX_REGISTRY_DOMAIN }}
             docker compose -f compose.prod.yml up -d
 
             echo "Verifying health check..."

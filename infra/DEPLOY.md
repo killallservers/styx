@@ -48,6 +48,7 @@ bash infra/deployment/provision-cx23.sh \
 - Creates `/opt/styx` deployment directory
 - Adds SSH key for automated CI/CD deployments
 - Configures auto-security updates
+- No configuration files needed (all via GitHub Actions secrets)
 
 ---
 

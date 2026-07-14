@@ -46,7 +46,8 @@ echo "  1. Create 'styx' user (non-root deployment)"
 echo "  2. Install Docker & Docker Compose"
 echo "  3. Set up firewall (SSH, HTTP, HTTPS)"
 echo "  4. Create deployment directory (/opt/styx)"
-echo "  5. Add SSH key for automated deployments"
+echo "  5. Add SSH key for automated CI/CD deployments"
+echo "  6. Configure auto-security updates"
 echo ""
 read -p "Continue? (y/n) " -n 1 -r
 echo
@@ -125,14 +126,6 @@ echo "$SSH_PUBKEY" >> /home/styx/.ssh/authorized_keys
 chmod 600 /home/styx/.ssh/authorized_keys
 chown -R styx:styx /home/styx/.ssh
 
-echo "========== Create Environment File ==========="
-cat > /opt/styx/.env <<EOF
-DOMAIN=$DOMAIN
-REGISTRY_PORT=7506
-EOF
-chown styx:styx /opt/styx/.env
-chmod 600 /opt/styx/.env
-
 echo "========== Create Deploy Hook ==========="
 cat > /home/styx/deploy.sh <<'EOFDEPLOY'
 #!/bin/bash
@@ -143,12 +136,7 @@ cd /opt/styx
 # Pull latest code
 git pull origin main
 
-# Load environment
-set -a
-[ -f .env ] && source .env
-set +a
-
-# Build and deploy
+# Build and deploy (DOMAIN passed via GitHub Actions)
 docker compose -f compose.prod.yml build --no-cache registry
 docker compose -f compose.prod.yml up -d
 
