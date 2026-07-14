@@ -2,6 +2,8 @@ package registry
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -181,4 +183,39 @@ func isGreaterVersion(v1, v2 string) bool {
 	}
 
 	return false
+}
+
+// LoadRegistryFromTOML loads all TOML specs from a directory and returns a map of ToolSpec.
+func LoadRegistryFromTOML(specsDir string) (map[string]*ToolSpec, error) {
+	registry := make(map[string]*ToolSpec)
+
+	entries, err := os.ReadDir(specsDir)
+	if err != nil {
+		return nil, fmt.Errorf("read specs dir: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".toml") {
+			continue
+		}
+
+		filePath := filepath.Join(specsDir, entry.Name())
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("read %s: %w", entry.Name(), err)
+		}
+
+		spec, err := ParseToolSpecFromTOML(string(data))
+		if err != nil {
+			return nil, fmt.Errorf("parse %s: %w", entry.Name(), err)
+		}
+
+		if err := ValidateToolSpec(spec); err != nil {
+			return nil, fmt.Errorf("validate %s: %w", entry.Name(), err)
+		}
+
+		registry[spec.Name] = spec
+	}
+
+	return registry, nil
 }

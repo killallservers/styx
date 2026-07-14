@@ -1,0 +1,39 @@
+name: Deploy Registry
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'cmd/registry/**'
+      - 'pkg/registry/specs/**'
+      - 'infra/compose/**'
+      - '.github/workflows/deploy-registry.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Hetzner
+        env:
+          SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          SERVER_IP: ${{ secrets.PRODUCTION_SERVER_IP }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts 2>/dev/null || true
+          
+          # Deploy
+          ssh -i ~/.ssh/deploy_key deploy@$SERVER_IP << 'DEPLOY'
+            cd /opt/styx
+            git pull origin main
+            docker compose -f infra/compose/compose.prod.yml down
+            docker compose -f infra/compose/compose.prod.yml build --no-cache
+            docker compose -f infra/compose/compose.prod.yml up -d
+            docker compose -f infra/compose/compose.prod.yml logs registry
+          DEPLOY

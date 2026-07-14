@@ -1,0 +1,173 @@
+# Web frontend (www.{$DOMAIN})
+www.{$DOMAIN} {
+  log {
+    output file /var/log/caddy/access-web.log
+    format json
+    level debug
+  }
+
+  encode gzip
+
+  # Health check endpoint
+  @health path /health
+  handle @health {
+    respond "OK" 200
+  }
+
+  # Rate limiting (global, not per-endpoint)
+  rate_limit {
+    zone dynamic 100r/s 1000
+    match /
+  }
+
+  # Reverse proxy to Web service
+  reverse_proxy {$WEB_UPSTREAM} {
+    header_uri X-Forwarded-Proto https
+    header_uri X-Forwarded-For {http.request.remote}
+    header_uri X-Request-ID {http.request.id}
+    header_uri X-Forwarded-Host {http.request.host}
+  }
+
+  # Security headers (comprehensive)
+  header {
+    -Server
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    X-XSS-Protection "1; mode=block"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "accelerometer=(), ambient-light-sensor=(), battery=(), camera=(), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), speaker=(), sync-xhr=(), usb=(), xr-spatial-tracking=()"
+    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://api.{$DOMAIN}; frame-ancestors 'none'; upgrade-insecure-requests"
+  }
+
+  # Compression
+  encode {
+    gzip 6
+    minimum_length 1024
+  }
+}
+
+# API backend (api.{$DOMAIN})
+api.{$DOMAIN} {
+  log {
+    output file /var/log/caddy/access-api.log
+    format json
+    level debug
+  }
+
+  encode gzip
+
+  # Health check endpoint (no auth required)
+  @health path /health
+  handle @health {
+    respond "OK" 200
+  }
+
+  # Rate limiting (strict for API)
+  rate_limit {
+    zone dynamic 100r/s 1000
+    match /
+  }
+
+  # API routes
+  @api path /api/*
+  handle @api {
+    reverse_proxy {$API_UPSTREAM} {
+      header_uri X-Forwarded-Proto https
+      header_uri X-Forwarded-For {http.request.remote}
+      header_uri X-Request-ID {http.request.id}
+      header_uri X-Forwarded-Host {http.request.host}
+      timeout 30s
+    }
+  }
+
+  # Catch-all
+  handle {
+    reverse_proxy {$API_UPSTREAM} {
+      header_uri X-Forwarded-Proto https
+      header_uri X-Forwarded-For {http.request.remote}
+      header_uri X-Request-ID {http.request.id}
+      header_uri X-Forwarded-Host {http.request.host}
+    }
+  }
+
+  # Security headers (API-specific)
+  header {
+    -Server
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    X-XSS-Protection "1; mode=block"
+    Referrer-Policy "no-referrer"
+    Permissions-Policy "accelerometer=(), ambient-light-sensor=(), battery=(), camera=(), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), navigation-override=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), speaker=(), sync-xhr=(), usb=(), xr-spatial-tracking=()"
+    Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
+  }
+
+  # Compression
+  encode {
+    gzip 6
+    minimum_length 256
+  }
+}
+
+# IP address routing (development/debugging access to 148.251.43.214)
+148.251.43.214 {
+  log {
+    output file /var/log/caddy/access-ip.log
+    format json
+    level debug
+  }
+
+  encode gzip
+
+  # Health check endpoint (no auth required)
+  @health path /health
+  handle @health {
+    respond "OK" 200
+  }
+
+  # Rate limiting
+  rate_limit {
+    zone dynamic 100r/s 1000
+    match /
+  }
+
+  # API routes via /api/* path
+  @api path /api/*
+  handle @api {
+    reverse_proxy {$API_UPSTREAM} {
+      header_uri X-Forwarded-Proto http
+      header_uri X-Forwarded-For {http.request.remote}
+      header_uri X-Request-ID {http.request.id}
+      header_uri X-Forwarded-Host {http.request.host}
+      timeout 30s
+    }
+  }
+
+  # Default to Web frontend
+  reverse_proxy {$WEB_UPSTREAM} {
+    header_uri X-Forwarded-Proto http
+    header_uri X-Forwarded-For {http.request.remote}
+    header_uri X-Request-ID {http.request.id}
+    header_uri X-Forwarded-Host {http.request.host}
+  }
+
+  # Security headers (relaxed for IP access)
+  header {
+    -Server
+  }
+
+  # Compression
+  encode {
+    gzip 6
+    minimum_length 1024
+  }
+}
+
+# Caddy admin + metrics (local only, no TLS)
+:2019 {
+  metrics /metrics
+  admin localhost:2019 {
+    enforce_origin
+  }
+}

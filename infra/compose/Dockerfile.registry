@@ -1,0 +1,48 @@
+# Multi-stage build for Styx registry server
+
+# Stage 1: Build
+FROM golang:1.26-alpine AS builder
+
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY cmd/registry cmd/registry
+COPY pkg pkg
+
+# Build binary
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o registry ./cmd/registry
+
+# Stage 2: Runtime
+FROM alpine:3.19
+
+# Install ca-certificates for HTTPS
+RUN apk --no-cache add ca-certificates curl
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/registry .
+
+# Copy specs (read-only)
+COPY pkg/registry/specs specs
+
+# Non-root user
+RUN addgroup -g 1000 styx && adduser -D -u 1000 -G styx styx
+USER styx
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:7506/health || exit 1
+
+# Expose port
+EXPOSE 7506
+
+# Run
+ENTRYPOINT ["./registry"]
+CMD ["--port", "7506", "--specs", "specs"]
