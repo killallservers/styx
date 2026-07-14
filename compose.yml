@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  styx-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: styx:latest
+    container_name: styx-dev
+    volumes:
+      # Mount styx config from host
+      - ~/.styx:/root/.styx
+      # Mount project directory
+      - .:/workspace
+    working_dir: /workspace
+    # Override default command to run bash
+    entrypoint: /bin/bash
+    stdin_open: true
+    tty: true
+    environment:
+      # Pass through host environment
+      HOME: /root
+      PATH: /root/.styx/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+  styx-ci:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: styx:latest
+    container_name: styx-ci
+    volumes:
+      # Mount project directory read-only for CI
+      - .:/workspace:ro
+      # Ephemeral store (not persisted)
+      - /tmp/styx-store:/root/.styx/store
+    working_dir: /workspace
+    environment:
+      HOME: /root
+      # CI-specific environment
+      CI: "true"
+      PATH: /root/.styx/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin

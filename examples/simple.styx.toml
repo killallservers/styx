@@ -1,0 +1,11 @@
+# Simple Styx configuration example
+# Defines a minimal set of tools for development
+
+[tools]
+ripgrep = "14.1.0"
+fd = "10.0.0"
+bat = "0.24.0"
+eza = "0.18.0"
+
+[env]
+RUST_BACKTRACE = "1"

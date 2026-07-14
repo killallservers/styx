@@ -1,0 +1,79 @@
+version: 2
+
+project_name: styx
+
+before:
+  hooks:
+    - go mod tidy
+    - go fmt ./...
+
+builds:
+  - id: styx
+    main: ./cmd/styx
+    binary: styx
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+universal_binaries:
+  - id: styx
+    name_template: 'styx'
+    replace: false
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    files:
+      - README.md
+      - LICENSE
+      - man/
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: killallservers
+    name: styx
+  draft: false
+  prerelease: auto
+  name_template: '{{ .ProjectName }} v{{ .Version }}'
+
+brews:
+  - repository:
+      owner: killallservers
+      name: homebrew-styx
+      token: '{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}'
+    directory: Formula
+    homepage: https://github.com/killallservers/styx
+    description: Unified dev environment manager for portfolio companies
+    license: MIT
+    skip_upload: false
+    commit_author:
+      name: styx-bot
+      email: noreply@killallservers.dev
+    commit_msg_template: 'chore(brew): update styx to {{ .Version }}'

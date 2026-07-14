@@ -1,0 +1,24 @@
+# Example: Data Science Project
+# Python development environment with utilities
+
+[tools]
+python = "3.12.0"      # Python runtime
+ripgrep = "14.1.0"     # Code search
+
+[env]
+# Python
+PYTHONUNBUFFERED = "1"
+PYTHONPATH = "/home/user/project:/home/user/project/lib"
+
+# Data Directories
+DATA_DIR = "/home/user/project/data"
+MODELS_DIR = "/home/user/project/models"
+NOTEBOOKS_DIR = "/home/user/project/notebooks"
+
+# Development
+DEBUG = "true"
+LOG_LEVEL = "debug"
+SEED = "42"
+
+# Optional: Database connection (if loading data from DB)
+DATABASE_URL = "postgresql://localhost:5432/datascience_dev"

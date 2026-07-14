@@ -1,0 +1,169 @@
+.TH STYX 1 "July 2026" "styx 0.1.0" "User Commands"
+.SH NAME
+styx \- unified dev environment manager for portfolio companies
+
+.SH SYNOPSIS
+.B styx
+[\fIOPTIONS\fR]
+[\fICOMMAND\fR]
+
+.SH DESCRIPTION
+Styx is a unified dev environment manager for Modo Ventures and portfolio companies.
+
+One TOML config file, one lock file, identical environments everywhere—no Nix language, no runtime AI dependency.
+
+Configuration is hierarchical: global config at ~/.local/share/styx/styx.toml can be overridden by project-local .styx/styx.toml files. Child configs override parent configs for specific tools while inheriting unspecified tools.
+
+.SH COMMANDS
+.TP
+.B styx install [tools...]
+Install tools from styx.toml configuration. Resolves tool specs from registry, downloads binaries, verifies checksums, extracts to content-addressable storage, and creates symlinks.
+
+.TP
+.B styx lock
+Generate or update styx.lock from current configuration and registry. The lock file enables reproducible installs across machines via 'styx sync'.
+
+.TP
+.B styx sync [tools...]
+Install tools from styx.lock (reproducible install). Installs tools on a fresh machine or CI environment with exact versions and checksums from lock file.
+
+.TP
+.B styx verify [tools...]
+Verify that installed tools match checksums recorded in styx.lock. Useful for detecting corrupted downloads or tampered binaries.
+
+.TP
+.B styx update [tool@version...]
+Update one or more tools to a specific version. Updates the local config (.styx/styx.toml) with new versions, then regenerates the lock file with updated checksums.
+
+.TP
+.B styx env [variables...]
+Show loaded environment variables and tool paths from styx.toml and styx.lock. Use --export-format to change output format (human, shell, json).
+
+.TP
+.B styx list [--verify]
+List all installed tools with their versions and paths. Shows tools from styx.lock if available, otherwise scans ~/.styx/bin.
+
+.TP
+.B styx info [tool]
+Show tool metadata from the registry. Displays available versions, stability markers, and supported platforms. Shows all tools if no tool name specified.
+
+.TP
+.B styx init [shell]
+Initialize shell integration. Generates hooks for bash, zsh, or fish that automatically detect .styx/styx.toml in current or parent directories and load the environment.
+
+.TP
+.B styx completion [shell]
+Generate shell completion script for bash, zsh, or fish. Source the output in your shell config to enable tab-completion for styx commands and flags.
+
+.SH OPTIONS
+.TP
+.B \-h, --help
+Show help for styx or a command.
+
+.TP
+.B \-v, --version
+Show styx version.
+
+.SH CONFIGURATION
+Configuration is stored in TOML format. Global config location:
+.B ~/.local/share/styx/styx.toml
+
+Project-local config location:
+.B .styx/styx.toml
+
+Example config:
+.RS
+.nf
+[tools]
+golang = "1.22.0"
+node = "20.0.0"
+postgres = "15.3"
+
+[env]
+RUST_BACKTRACE = "1"
+DATABASE_URL = "postgres://localhost"
+.fi
+.RE
+
+.SH LOCK FILE
+Lock files are stored as JSON in the project root:
+.B styx.lock
+
+Lock files record exact tool versions, checksums, and URLs for reproducible installations. Commit styx.lock to version control to ensure all team members use identical environments.
+
+.SH ENVIRONMENT LOADING
+Tool paths are added to environment variables:
+.B TOOLNAME_PATH=/home/user/.styx/bin/toolname
+
+Environment variables from config are also loaded.
+
+For automatic environment loading on every cd, use:
+.RS
+.B styx init bash
+.RE
+
+Then add the output to your ~/.bashrc (or ~/.zshrc for zsh, ~/.config/fish/conf.d/styx.fish for fish).
+
+.SH EXAMPLES
+.TP
+Install all tools from config:
+.B styx install
+
+.TP
+Generate lock file:
+.B styx lock
+
+.TP
+Reproducible install on CI:
+.B styx sync
+
+.TP
+Update golang version:
+.B styx update golang@1.24.0
+
+.TP
+Setup bash auto-loading:
+.B styx init bash >> ~/.bashrc
+
+.TP
+Show available tools:
+.B styx list
+
+.TP
+Get golang metadata:
+.B styx info golang
+
+.SH FILES
+.TP
+.B ~/.local/share/styx/styx.toml
+Global configuration file.
+
+.TP
+.B .styx/styx.toml
+Project-local configuration file (overrides global).
+
+.TP
+.B styx.lock
+Project lock file (JSON format). Commit to version control.
+
+.TP
+.B ~/.styx/store/
+Content-addressable storage for tool binaries.
+
+.TP
+.B ~/.styx/bin/
+Symlinks to installed tools in storage.
+
+.SH SEE ALSO
+.B styx-init(1)
+.B styx-env(1)
+.B styx-install(1)
+
+.SH AUTHOR
+Modo Ventures
+
+.SH REPORTING BUGS
+Report bugs at https://github.com/killallservers/styx/issues
+
+.SH WEBSITE
+https://github.com/killallservers/styx

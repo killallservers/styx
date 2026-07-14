@@ -1,0 +1,66 @@
+.TH STYX-ENV 1 "July 2026" "styx 0.1.0" "User Commands"
+.SH NAME
+styx-env \- show loaded environment variables and tool paths
+
+.SH SYNOPSIS
+.B styx env
+[\fIOPTIONS\fR]
+[\fIVARIABLES...\fR]
+
+.SH DESCRIPTION
+Show loaded environment variables and tool paths from styx.toml and styx.lock.
+
+Displays the merged environment (global + hierarchical) that would be set when running tools or spawning a shell.
+
+Environment includes:
+.RS
+.B Configured variables from [env] section in styx.toml
+.B Tool paths (e.g., GOLANG_PATH, NODE_PATH)
+.RE
+
+.SH OPTIONS
+.TP
+.B --export-format=FORMAT
+Choose output format:
+.RS
+.B human (default)
+Human-readable output: KEY=value, one per line.
+
+.B shell
+Shell-compatible format with proper escaping: export KEY='value'. Suitable for eval "$(styx env --export-format=shell)".
+
+.B json
+JSON format: {"KEY": "value", ...}. Suitable for programmatic use.
+.RE
+
+.SH EXAMPLES
+.TP
+Show all environment variables:
+.B styx env
+
+.TP
+Show specific variable:
+.B styx env RUST_BACKTRACE
+
+.TP
+Get shell-compatible output for eval:
+.B eval "$(styx env --export-format=shell)"
+
+.TP
+Export to JSON for tools:
+.B styx env --export-format=json | jq .GOLANG_PATH
+
+.SH HIERARCHICAL CONFIG
+Tool paths and environment variables are merged from:
+.RS
+1. Global config (~/.local/share/styx/styx.toml)
+2. Parent directory configs (.styx/styx.toml)
+3. Current directory config (.styx/styx.toml)
+.RE
+
+Child configs override parent configs for specific tools, while inheriting unspecified tools.
+
+.SH SEE ALSO
+.B styx(1)
+.B styx-init(1)
+.B styx-install(1)

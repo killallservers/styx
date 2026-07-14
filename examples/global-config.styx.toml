@@ -1,0 +1,26 @@
+# Example Global Configuration
+# Place this in ~/.local/share/styx/styx.toml for system-wide defaults
+#
+# These defaults apply to all projects unless overridden by local config.
+# Local config is in ./.styx/styx.toml (per-project).
+
+[tools]
+# Utility tools - useful for all development
+ripgrep = "14.1.0"    # Fast grep
+fd = "10.0.0"         # Fast find
+bat = "0.24.0"        # Cat with syntax highlighting
+eza = "0.18.0"        # Modern ls
+
+# Common runtimes - define your preferred versions
+golang = "1.23.1"
+rust = "1.81.0"
+node = "20.10.0"
+python = "3.12.0"
+
+[env]
+# Global debugging settings
+RUST_BACKTRACE = "1"
+DEBUG = "false"       # Can be overridden per-project
+
+# Global paths
+EDITOR = "vim"

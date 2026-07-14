@@ -1,0 +1,25 @@
+# Example: Go Backend Service
+# A typical backend written in Go with database, caching, and utility tools
+
+[tools]
+golang = "1.23.1"      # Go compiler and runtime
+postgres = "15.3"      # PostgreSQL database
+# Inherited from global (if set):
+# ripgrep = "14.1.0"   # For searching code
+
+[env]
+# Go
+GOPATH = "/home/user/.go"
+GO111MODULE = "on"
+
+# Database
+DATABASE_URL = "postgresql://localhost:5432/backend_dev"
+DATABASE_MAX_CONNECTIONS = "10"
+
+# Server
+API_PORT = "8080"
+API_HOST = "0.0.0.0"
+
+# Debugging
+DEBUG = "true"
+RUST_BACKTRACE = "1"

@@ -1,0 +1,87 @@
+.TH STYX-INIT 1 "July 2026" "styx 0.1.0" "User Commands"
+.SH NAME
+styx-init \- initialize shell integration for automatic environment loading
+
+.SH SYNOPSIS
+.B styx init
+[\fISHELL\fR]
+
+.SH DESCRIPTION
+Initialize Styx shell integration for automatic environment loading.
+
+When you cd into a project with .styx/styx.toml, Styx automatically loads the configured environment (tools, paths, variables).
+
+Generates shell hook code that:
+.RS
+.B Runs on each prompt (PROMPT_COMMAND in bash, precmd in zsh, PWD change in fish)
+.B Walks up the directory tree looking for .styx/styx.toml
+.B Loads environment variables if found
+.B Gracefully handles missing styx binary (silent no-op)
+.RE
+
+.SH ARGUMENTS
+.TP
+.B bash
+Generate setup code for bash. Add to ~/.bashrc.
+
+.TP
+.B zsh
+Generate setup code for zsh. Add to ~/.zshrc.
+
+.TP
+.B fish
+Generate setup code for fish. Copy to ~/.config/fish/conf.d/styx.fish.
+
+.SH EXAMPLES
+.TP
+Setup bash integration:
+.B styx init bash >> ~/.bashrc
+.B source ~/.bashrc
+
+.TP
+Setup zsh integration:
+.B styx init zsh >> ~/.zshrc
+.B exec zsh
+
+.TP
+Setup fish integration:
+.B mkdir -p ~/.config/fish/conf.d
+.B styx init fish > ~/.config/fish/conf.d/styx.fish
+
+.TP
+View the hook code before installing:
+.B styx init bash
+
+.SH BEHAVIOR
+Once installed, the shell hook:
+.RS
+1. Detects when you cd into a directory
+2. Walks up from current directory to root, looking for .styx/styx.toml
+3. If found, loads environment variables and tool paths
+4. If not found or styx binary missing, silently continues (no error)
+.RE
+
+Example directory structure:
+.RS
+.nf
+~/portfolio/                    # Has .styx/styx.toml
+  api/                          # No config, inherits parent
+    $ cd api      # Env: golang=1.22, node=20
+  web/                          # Has .styx/styx.toml with node=21
+    $ cd web      # Env: golang=1.22, node=21 (overridden)
+.fi
+.RE
+
+.SH CUSTOMIZATION
+The hook code is printed to stdout. Users can:
+.RS
+.B Copy the code to their shell config manually (recommended)
+.B Modify the hook before installing (for custom logic)
+.B Disable by commenting out the hook in shell config
+.RE
+
+No hidden modifications to shell configuration files.
+
+.SH SEE ALSO
+.B styx(1)
+.B styx-env(1)
