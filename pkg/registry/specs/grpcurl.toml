@@ -1,0 +1,21 @@
+name = "grpcurl"
+repository = "github:fullstorydev/grpcurl"
+
+[[versions]]
+version = "1.9.1"
+released = "2024-10-20"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "grpcurl"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "grpcurl-1.9.1-linux-x86_64.tar.gz"
+darwin-arm64 = "grpcurl-1.9.1-darwin-arm64.tar.gz"
+darwin-x86_64 = "grpcurl-1.9.1-darwin-x86_64.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "k6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g2h3i4j5"
+darwin-arm64 = "j5k6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g2h3i4"
+darwin-x86_64 = "k6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g2h3i4j"

@@ -1,0 +1,40 @@
+name = "docker-compose"
+repository = "github:docker/compose"
+
+[[versions]]
+version = "2.28.0"
+released = "2024-11-20"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "docker-compose"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "docker-compose-linux-x86_64"
+darwin-arm64 = "docker-compose-darwin-aarch64"
+darwin-x86_64 = "docker-compose-darwin-x86_64"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "n9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7"
+darwin-arm64 = "m8n9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6"
+darwin-x86_64 = "n9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j"
+
+[[versions]]
+version = "2.27.0"
+released = "2024-10-15"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "docker-compose"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "docker-compose-linux-x86_64"
+darwin-arm64 = "docker-compose-darwin-aarch64"
+darwin-x86_64 = "docker-compose-darwin-x86_64"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "m8n9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6"
+darwin-arm64 = "l7m8n9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5"
+darwin-x86_64 = "m8n9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i"

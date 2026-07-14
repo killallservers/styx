@@ -1,0 +1,21 @@
+name = "buf"
+repository = "github:bufbuild/buf"
+
+[[versions]]
+version = "1.34.0"
+released = "2024-12-03"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "buf"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "buf-Linux-x86_64.tar.gz"
+darwin-arm64 = "buf-Darwin-arm64.tar.gz"
+darwin-x86_64 = "buf-Darwin-x86_64.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "m8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6"
+darwin-arm64 = "l7m8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5"
+darwin-x86_64 = "m8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i"

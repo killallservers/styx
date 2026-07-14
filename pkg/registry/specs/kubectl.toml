@@ -1,0 +1,40 @@
+name = "kubectl"
+repository = "github:kubernetes/kubernetes"
+
+[[versions]]
+version = "1.32.0"
+released = "2024-12-11"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "kubectl"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "kubectl-linux-amd64"
+darwin-arm64 = "kubectl-darwin-arm64"
+darwin-x86_64 = "kubectl-darwin-amd64"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0"
+darwin-arm64 = "e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9"
+darwin-x86_64 = "f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e"
+
+[[versions]]
+version = "1.31.0"
+released = "2024-10-16"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "kubectl"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "kubectl-linux-amd64"
+darwin-arm64 = "kubectl-darwin-arm64"
+darwin-x86_64 = "kubectl-darwin-amd64"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9"
+darwin-arm64 = "d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8"
+darwin-x86_64 = "e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d"

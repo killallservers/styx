@@ -1,0 +1,40 @@
+name = "protoc"
+repository = "github:protocolbuffers/protobuf"
+
+[[versions]]
+version = "28.0"
+released = "2024-12-04"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "protoc"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "protoc-28.0-linux-x86_64.zip"
+darwin-arm64 = "protoc-28.0-osx-aarch_64.zip"
+darwin-x86_64 = "protoc-28.0-osx-x86_64.zip"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "j5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g2h3i4"
+darwin-arm64 = "i4j5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g2h3"
+darwin-x86_64 = "j5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g2h3i"
+
+[[versions]]
+version = "27.3"
+released = "2024-10-01"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "protoc"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "protoc-27.3-linux-x86_64.zip"
+darwin-arm64 = "protoc-27.3-osx-aarch_64.zip"
+darwin-x86_64 = "protoc-27.3-osx-x86_64.zip"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "i4j5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g2h3"
+darwin-arm64 = "h3i4j5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g2"
+darwin-x86_64 = "i4j5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g2h"

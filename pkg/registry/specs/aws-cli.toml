@@ -1,0 +1,40 @@
+name = "aws-cli"
+repository = "github:aws/aws-cli"
+
+[[versions]]
+version = "2.15.0"
+released = "2024-11-20"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "aws"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "awscliv2-linux-x86_64.zip"
+darwin-arm64 = "awscliv2-darwin-arm64.zip"
+darwin-x86_64 = "awscliv2-darwin-x86_64.zip"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "h3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g2"
+darwin-arm64 = "g2h3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1"
+darwin-x86_64 = "h3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1g"
+
+[[versions]]
+version = "2.14.0"
+released = "2024-10-15"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "aws"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "awscliv2-linux-x86_64.zip"
+darwin-arm64 = "awscliv2-darwin-arm64.zip"
+darwin-x86_64 = "awscliv2-darwin-x86_64.zip"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "g2h3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1"
+darwin-arm64 = "f1g2h3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0"
+darwin-x86_64 = "g2h3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f"

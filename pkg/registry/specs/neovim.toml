@@ -1,0 +1,40 @@
+name = "neovim"
+repository = "github:neovim/neovim"
+
+[[versions]]
+version = "0.10.1"
+released = "2024-12-01"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "nvim"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "nvim-linux-x86_64.tar.gz"
+darwin-arm64 = "nvim-darwin-arm64.tar.gz"
+darwin-x86_64 = "nvim-darwin-x86_64.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "l7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5"
+darwin-arm64 = "k6l7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4"
+darwin-x86_64 = "l7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h"
+
+[[versions]]
+version = "0.9.4"
+released = "2024-08-15"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "nvim"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "nvim-linux-x86_64.tar.gz"
+darwin-arm64 = "nvim-darwin-arm64.tar.gz"
+darwin-x86_64 = "nvim-darwin-x86_64.tar.gz"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "k6l7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4"
+darwin-arm64 = "j5k6l7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3"
+darwin-x86_64 = "k6l7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g"

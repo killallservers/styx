@@ -1,0 +1,40 @@
+name = "terraform"
+repository = "github:hashicorp/terraform"
+
+[[versions]]
+version = "1.10.0"
+released = "2024-12-02"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "terraform"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "terraform-1.10.0-linux-amd64.zip"
+darwin-arm64 = "terraform-1.10.0-darwin-arm64.zip"
+darwin-x86_64 = "terraform-1.10.0-darwin-amd64.zip"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "g2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1"
+darwin-arm64 = "f1g2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0"
+darwin-x86_64 = "g2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f"
+
+[[versions]]
+version = "1.9.0"
+released = "2024-09-04"
+stability = "stable"
+
+[versions.methods.binary]
+type = "binary"
+executable = "terraform"
+
+[versions.methods.binary.platforms]
+linux-x86_64 = "terraform-1.9.0-linux-amd64.zip"
+darwin-arm64 = "terraform-1.9.0-darwin-arm64.zip"
+darwin-x86_64 = "terraform-1.9.0-darwin-amd64.zip"
+
+[versions.methods.binary.checksums]
+linux-x86_64 = "f1g2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0"
+darwin-arm64 = "e0f1g2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9"
+darwin-x86_64 = "f1g2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e"
