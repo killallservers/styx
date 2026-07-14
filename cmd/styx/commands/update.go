@@ -53,6 +53,12 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		updates[toolName] = version
 	}
 
+	// Load hierarchical config to get registry settings
+	merged, err := config.LoadHierarchical()
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
 	// Load local config (just the current dir's .styx/styx.toml for editing)
 	localConfig, err := config.LoadFromPath(".styx/styx.toml")
 	if err != nil && !os.IsNotExist(err) {
@@ -62,8 +68,8 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		localConfig = config.NewConfig()
 	}
 
-	// Load registry to validate versions exist
-	reg, err := registry.LoadEmbeddedRegistry()
+	// Load registry to validate versions exist (with HTTP fallback if configured)
+	reg, err := registry.ResolveRegistry(merged)
 	if err != nil {
 		return fmt.Errorf("failed to load registry: %w", err)
 	}

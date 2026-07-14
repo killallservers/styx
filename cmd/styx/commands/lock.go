@@ -38,8 +38,8 @@ func runLock(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Load embedded registry
-	reg, err := registry.LoadEmbeddedRegistry()
+	// Load registry (with HTTP fallback if configured)
+	reg, err := registry.ResolveRegistry(merged)
 	if err != nil {
 		return fmt.Errorf("failed to load registry: %w", err)
 	}

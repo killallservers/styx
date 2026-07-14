@@ -41,8 +41,14 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		requestedVersion = parts[1]
 	}
 
-	// Load registry
-	reg, err := registry.LoadEmbeddedRegistry()
+	// Load hierarchical config to get registry settings
+	merged, err := config.LoadHierarchical()
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Load registry (with HTTP fallback if configured)
+	reg, err := registry.ResolveRegistry(merged)
 	if err != nil {
 		return fmt.Errorf("failed to load registry: %w", err)
 	}

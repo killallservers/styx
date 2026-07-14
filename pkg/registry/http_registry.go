@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -38,7 +39,7 @@ func NewHTTPRegistry(baseURL string) (*HTTPRegistry, error) {
 		return nil, fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	cacheDir := filepath.Join(home, ".styx", "cache", "registry")
+	cacheDir := filepath.Join(home, ".styx", "cache")
 
 	return &HTTPRegistry{
 		baseURL:  baseURL,
@@ -70,13 +71,13 @@ func (hr *HTTPRegistry) LoadRegistry() (map[string]*ToolSpec, error) {
 
 	// Try fallback cache (even if stale)
 	if cached, err := hr.loadFromCacheUnchecked(); err == nil {
-		fmt.Fprintf(os.Stderr, "Warning: Using stale cached registry (fresh fetch failed: %v)\n", err)
+		fmt.Fprintf(os.Stderr, "⚠ Using stale cached registry (fresh fetch failed: %v)\n", err)
 		return cached, nil
 	}
 
 	// Log the error but fall back to embedded
-	fmt.Fprintf(os.Stderr, "Warning: Failed to fetch registry from %s: %v\n", hr.baseURL, err)
-	fmt.Fprintf(os.Stderr, "Falling back to embedded registry\n")
+	fmt.Fprintf(os.Stderr, "⚠ Failed to fetch registry from %s: %v\n", hr.baseURL, err)
+	fmt.Fprintf(os.Stderr, "⚠ Falling back to embedded registry\n")
 
 	return hr.embedded, nil
 }
@@ -103,7 +104,8 @@ func (hr *HTTPRegistry) fetchFromHTTP() (map[string]*ToolSpec, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("registry server returned %d", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("registry server returned %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Parse response
@@ -112,14 +114,32 @@ func (hr *HTTPRegistry) fetchFromHTTP() (map[string]*ToolSpec, error) {
 		return nil, fmt.Errorf("failed to read registry response: %w", err)
 	}
 
-	// For now, just validate we can fetch
 	if len(body) == 0 {
 		return nil, fmt.Errorf("empty registry response")
 	}
 
-	// Parse would go here (JSON → ToolSpec map)
-	// For Phase 5, this would deserialize the JSON registry
-	return nil, fmt.Errorf("HTTP registry parsing not yet implemented (requires remote registry)")
+	// Parse JSON response
+	var response struct {
+		Version string                     `json:"version"`
+		Tools   map[string]*ToolSpec       `json:"tools"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse registry JSON: %w", err)
+	}
+
+	if response.Tools == nil {
+		return nil, fmt.Errorf("no tools in registry response")
+	}
+
+	// Validate all specs
+	for toolName, spec := range response.Tools {
+		if err := ValidateToolSpec(spec); err != nil {
+			return nil, fmt.Errorf("invalid spec for tool %q: %w", toolName, err)
+		}
+	}
+
+	return response.Tools, nil
 }
 
 // loadFromCache loads cached registry specs if fresh (< 24 hours old).
@@ -137,13 +157,21 @@ func (hr *HTTPRegistry) loadFromCache() (map[string]*ToolSpec, error) {
 	}
 
 	// Read and parse cache
-	_, err = os.ReadFile(cacheFile)
+	data, err := os.ReadFile(cacheFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read cache: %w", err)
 	}
 
-	// For now, just return embedded (cache implementation would deserialize here)
-	return hr.embedded, nil
+	// Parse JSON cache
+	var response struct {
+		Tools map[string]*ToolSpec `json:"tools"`
+	}
+
+	if err := json.Unmarshal(data, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse cache JSON: %w", err)
+	}
+
+	return response.Tools, nil
 }
 
 // loadFromCacheUnchecked loads cached registry specs without freshness check.
@@ -151,13 +179,21 @@ func (hr *HTTPRegistry) loadFromCacheUnchecked() (map[string]*ToolSpec, error) {
 	cacheFile := filepath.Join(hr.cacheDir, "registry.cache.json")
 
 	// Read cache file without checking age
-	_, err := os.ReadFile(cacheFile)
+	data, err := os.ReadFile(cacheFile)
 	if err != nil {
 		return nil, fmt.Errorf("cache not found: %w", err)
 	}
 
-	// For now, just return embedded (cache implementation would deserialize here)
-	return hr.embedded, nil
+	// Parse JSON cache
+	var response struct {
+		Tools map[string]*ToolSpec `json:"tools"`
+	}
+
+	if err := json.Unmarshal(data, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse cache JSON: %w", err)
+	}
+
+	return response.Tools, nil
 }
 
 // saveToCache saves registry specs to cache.
@@ -168,9 +204,17 @@ func (hr *HTTPRegistry) saveToCache(specs map[string]*ToolSpec) error {
 
 	cacheFile := filepath.Join(hr.cacheDir, "registry.cache.json")
 
-	// For now, just create an empty cache file to mark it as cached
-	// Full implementation would serialize specs to JSON
-	if err := os.WriteFile(cacheFile, []byte("{}"), 0600); err != nil {
+	// Serialize specs to JSON
+	payload := map[string]interface{}{
+		"tools": specs,
+	}
+
+	data, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal cache: %w", err)
+	}
+
+	if err := os.WriteFile(cacheFile, data, 0600); err != nil {
 		return fmt.Errorf("failed to write cache: %w", err)
 	}
 
@@ -179,6 +223,7 @@ func (hr *HTTPRegistry) saveToCache(specs map[string]*ToolSpec) error {
 
 // LoadWithHTTPFallback loads registry from HTTP URL with embedded fallback.
 // This is the recommended entry point for Phase 2+.
+// If httpURL is empty, uses embedded registry directly.
 func LoadWithHTTPFallback(httpURL string) (map[string]*ToolSpec, error) {
 	httpReg, err := NewHTTPRegistry(httpURL)
 	if err != nil {

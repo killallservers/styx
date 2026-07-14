@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/killallservers/styx/pkg/config"
 	"github.com/killallservers/styx/pkg/registry"
 )
 
@@ -24,8 +25,19 @@ Examples:
 }
 
 func runInfo(cmd *cobra.Command, args []string) error {
-	// Load registry
-	reg, err := registry.LoadEmbeddedRegistry()
+	// Load hierarchical config to get registry settings
+	merged, err := config.LoadHierarchical()
+	if err != nil {
+		// Config might not exist, fall back to embedded
+		merged = config.Merged{
+			Tools:      make(map[string]string),
+			Env:        make(map[string]string),
+			Registries: []config.Registry{},
+		}
+	}
+
+	// Load registry (with HTTP fallback if configured)
+	reg, err := registry.ResolveRegistry(merged)
 	if err != nil {
 		return fmt.Errorf("failed to load registry: %w", err)
 	}

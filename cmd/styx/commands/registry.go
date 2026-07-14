@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/killallservers/styx/pkg/config"
 	"github.com/killallservers/styx/pkg/registry"
 )
 
@@ -52,7 +53,18 @@ Output can be written to a file and served from registry.styx.sh`,
 }
 
 func runRegistryList(cmd *cobra.Command, args []string) error {
-	reg, err := registry.LoadEmbeddedRegistry()
+	// Load hierarchical config to get registry settings
+	merged, err := config.LoadHierarchical()
+	if err != nil {
+		// Config might not exist, fall back to embedded
+		merged = config.Merged{
+			Tools:      make(map[string]string),
+			Env:        make(map[string]string),
+			Registries: []config.Registry{},
+		}
+	}
+
+	reg, err := registry.ResolveRegistry(merged)
 	if err != nil {
 		return fmt.Errorf("failed to load registry: %w", err)
 	}
@@ -85,7 +97,18 @@ func runRegistryList(cmd *cobra.Command, args []string) error {
 func runRegistryInfo(cmd *cobra.Command, args []string) error {
 	toolName := args[0]
 
-	reg, err := registry.LoadEmbeddedRegistry()
+	// Load hierarchical config to get registry settings
+	merged, err := config.LoadHierarchical()
+	if err != nil {
+		// Config might not exist, fall back to embedded
+		merged = config.Merged{
+			Tools:      make(map[string]string),
+			Env:        make(map[string]string),
+			Registries: []config.Registry{},
+		}
+	}
+
+	reg, err := registry.ResolveRegistry(merged)
 	if err != nil {
 		return fmt.Errorf("failed to load registry: %w", err)
 	}
@@ -124,7 +147,18 @@ func runRegistryInfo(cmd *cobra.Command, args []string) error {
 }
 
 func runRegistryExport(cmd *cobra.Command, args []string) error {
-	reg, err := registry.LoadEmbeddedRegistry()
+	// Load hierarchical config to get registry settings
+	merged, err := config.LoadHierarchical()
+	if err != nil {
+		// Config might not exist, fall back to embedded
+		merged = config.Merged{
+			Tools:      make(map[string]string),
+			Env:        make(map[string]string),
+			Registries: []config.Registry{},
+		}
+	}
+
+	reg, err := registry.ResolveRegistry(merged)
 	if err != nil {
 		return fmt.Errorf("failed to load registry: %w", err)
 	}
