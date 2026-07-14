@@ -7,7 +7,7 @@
 
 # Build the styx binary
 build:
-    go build -o styx ./cmd/styx
+    go build -o bin/styx ./cmd/styx
 
 # Run all tests
 test:
