@@ -11,19 +11,21 @@ Production infrastructure for deploying the Styx registry server to Hetzner.
 
 ## Quick Start
 
-1. **Provision a Hetzner cx23 server:**
-   ```bash
-   bash infra/deployment/provision-cx23.sh <public_ip> <domain>
-   ```
+**Option 1: Automatic (Recommended)**
+1. Edit SSH key into `infra/deployment/hetzner-userdata.sh`
+2. Create Hetzner server, paste userdata script into console
+3. Wait 2-3 minutes for boot
+4. SSH and deploy
 
-2. **Configure GitHub Actions secrets:**
-   See [GITHUB_SECRETS_SETUP.md](GITHUB_SECRETS_SETUP.md)
+→ See [HETZNER_SETUP.md](deployment/HETZNER_SETUP.md)
 
-3. **Deploy:**
-   ```bash
-   git push origin main
-   ```
-   GitHub Actions automatically builds, pushes, and deploys.
+**Option 2: Manual**
+1. Create Hetzner server (base Debian 13)
+2. Run provisioning script
+3. Run user init script
+4. Deploy
+
+→ See [DEPLOY.md](DEPLOY.md)
 
 ---
 
