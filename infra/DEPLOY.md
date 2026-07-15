@@ -28,7 +28,7 @@ Step-by-step guide for provisioning and deploying the Styx registry server.
 9. Click **Create Server**
 10. **Copy the IP address** (you'll need it next)
 
-### Run Provisioning Script
+### Run Provisioning Script (System-Level)
 
 On your local machine:
 
@@ -41,14 +41,13 @@ bash infra/deployment/provision-cx23.sh \
     ~/.ssh/id_rsa.pub
 ```
 
-**What this does:**
+**What this does (root, one-time):**
+- System updates and Docker install
 - Creates `styx` user (non-root deployment)
-- Installs Docker and Docker Compose
 - Sets up UFW firewall (SSH, HTTP, HTTPS)
-- Creates `/opt/styx` deployment directory
-- Adds SSH key for automated CI/CD deployments
+- Creates `/opt/styx` directory
+- Adds SSH key for deployments
 - Configures auto-security updates
-- No configuration files needed (all via GitHub Actions secrets)
 
 ---
 
@@ -75,23 +74,25 @@ Wait for DNS propagation (usually < 5 minutes, max 48 hours).
 
 ---
 
-## Step 3: Initialize Repository on Server
+## Step 3: Initialize User Environment (User-Level)
 
-SSH into the server:
+SSH into the server as `styx`:
 
 ```bash
 ssh styx@<server_ip>
-cd /opt/styx
 ```
 
-Initialize git repository:
+Run the user init script:
 
 ```bash
-git init
-git remote add origin https://github.com/killallservers/styx
-git fetch origin main
-git checkout -b main origin/main
+bash infra/deployment/init-styx-user.sh killallservers/styx
 ```
+
+**What this does (styx user):**
+- Clones repository to `/opt/styx`
+- Creates `deploy.sh` script
+- Sets up shell aliases (`styx-deploy`, `styx-logs`, `styx-status`)
+- Idempotent (safe to re-run)
 
 ---
 
