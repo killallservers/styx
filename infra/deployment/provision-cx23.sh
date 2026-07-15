@@ -126,29 +126,6 @@ echo "$SSH_PUBKEY" >> /home/styx/.ssh/authorized_keys
 chmod 600 /home/styx/.ssh/authorized_keys
 chown -R styx:styx /home/styx/.ssh
 
-echo "========== Create Deploy Hook ==========="
-cat > /home/styx/deploy.sh <<'EOFDEPLOY'
-#!/bin/bash
-set -eu
-
-cd /opt/styx
-
-# Pull latest code
-git pull origin main
-
-# Build and deploy (DOMAIN passed via GitHub Actions)
-docker compose -f compose.prod.yml build --no-cache registry
-docker compose -f compose.prod.yml up -d
-
-# Verify
-sleep 2
-curl -f http://localhost:7506/health || exit 1
-echo "✓ Registry deployed successfully"
-EOFDEPLOY
-
-chmod +x /home/styx/deploy.sh
-chown styx:styx /home/styx/deploy.sh
-
 echo "========== Setup Cron for Auto-Updates ==========="
 cat > /etc/cron.daily/styx-security-updates <<'EOFCRON'
 #!/bin/bash
@@ -163,38 +140,39 @@ echo "========================================="
 echo "✓ Hetzner cx23 provisioning complete!"
 echo "========================================="
 echo ""
-echo "Next steps:"
-echo "  1. Clone repository into /opt/styx:"
-echo "     cd /opt/styx && git init && git remote add origin https://github.com/$GITHUB_REPO"
-echo "  2. Pull main branch"
-echo "  3. Run: /home/styx/deploy.sh"
-echo "  4. Verify: curl https://$DOMAIN/health"
-echo ""
 EOFSCRIPT
 )
 
-# Run remote provisioning
+# Run remote provisioning (system-level setup)
 ssh -o StrictHostKeyChecking=no root@"$SERVER_IP" bash -s "$DOMAIN" "$GITHUB_REPO" "$SSH_PUBKEY" <<< "$REMOTE_SCRIPT"
 
 echo ""
 echo "========================================="
-echo "Server provisioned! Now:"
+echo "System provisioned! Now initialize user:"
 echo "========================================="
 echo ""
-echo "1. SSH into the server and initialize the repository:"
+echo "1. SSH into server as styx user:"
 echo "   ssh styx@$SERVER_IP"
-echo "   cd /opt/styx"
-echo "   git init"
-echo "   git remote add origin https://github.com/$GITHUB_REPO"
-echo "   git pull origin main"
 echo ""
-echo "2. Deploy the registry:"
+echo "2. Initialize styx user environment (run as styx, not root):"
+echo "   curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPO/main/infra/deployment/init-styx-user.sh | bash -s $GITHUB_REPO"
+echo ""
+echo "   Or if you have the repo locally:"
+echo "   bash infra/deployment/init-styx-user.sh $GITHUB_REPO"
+echo ""
+echo "3. This will:"
+echo "   - Clone repository to /opt/styx"
+echo "   - Create deploy.sh script"
+echo "   - Set up shell aliases"
+echo ""
+echo "4. Deploy the registry:"
+echo "   cd /opt/styx"
 echo "   ./deploy.sh"
 echo ""
-echo "3. Verify it's working:"
+echo "5. Verify it's working:"
 echo "   curl https://$DOMAIN/health"
 echo ""
-echo "4. Update GitHub Actions secrets (see GITHUB_SECRETS_SETUP.md):"
+echo "6. Update GitHub Actions secrets (see GITHUB_SECRETS_SETUP.md):"
 echo "   - STYX_DEPLOY_HOST: $SERVER_IP"
 echo "   - STYX_DEPLOY_USER: styx"
 echo "   - STYX_DEPLOY_KEY: (private key corresponding to $SSH_KEY)"
